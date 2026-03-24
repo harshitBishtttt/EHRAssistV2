@@ -1,0 +1,67 @@
+### Java ###
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+
+### Maven ###
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+src/main/resources/ehrassist-firebase.json
+
+### Spring Boot ###
+*.log
+spring-shell.log
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+### Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+
+### VS Code ###
+.vscode/
+
+### OS Files ###
+.DS_Store
+Thumbs.db
+desktop.ini
+
+### Environment & Secrets ###
+.env
+*.env.local
+application-local.properties
+application-local.yml
+firebase-service-account*.json
+*-firebase-adminsdk-*.json
+
+src/main/resources/ehrassist-firebase.json
+
+### Build ###
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+### Logs ###
+logs/
+*.log
+
+### Temp ###
+*.tmp
+*.bak
+*.swp
+*~
