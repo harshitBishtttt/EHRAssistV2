@@ -14,6 +14,7 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.DiagnosticReport;
 import org.hl7.fhir.r4.model.Resource;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,7 +44,7 @@ public class DiagnosticReportServiceImpl implements DiagnosticReportService {
 
     @Override
     @Transactional(readOnly = true)
-    public Bundle search(UUID id, UUID patientId, org.springframework.data.domain.Pageable pageable) {
+    public Bundle search(UUID id, UUID patientId, Pageable pageable) {
         // If no parameters provided, return empty bundle
         if (id == null && patientId == null) {
             return bundleBuilder.searchSetWithPagination("DiagnosticReport", List.of(), 0L, 0, pageable.getPageSize(), "");

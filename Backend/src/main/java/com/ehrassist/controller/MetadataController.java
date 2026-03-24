@@ -3,6 +3,7 @@ package com.ehrassist.controller;
 import ca.uhn.fhir.context.FhirContext;
 import lombok.RequiredArgsConstructor;
 import org.hl7.fhir.r4.model.CapabilityStatement;
+import org.hl7.fhir.r4.model.CodeType;
 import org.hl7.fhir.r4.model.Enumerations;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,7 +30,7 @@ public class MetadataController {
                 .setName("EHRAssistV2")
                 .setVersion("2.0"));
         cs.setFhirVersion(Enumerations.FHIRVersion._4_0_1);
-        cs.setFormat(List.of(new org.hl7.fhir.r4.model.CodeType("application/fhir+json")));
+        cs.setFormat(List.of(new CodeType("application/fhir+json")));
 
         CapabilityStatement.CapabilityStatementRestComponent rest =
                 new CapabilityStatement.CapabilityStatementRestComponent();

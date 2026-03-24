@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.EpisodeOfCare;
 import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,7 +36,7 @@ public class EpisodeOfCareController {
             @RequestParam(required = false) UUID patient,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String type,
-            @org.springframework.data.web.PageableDefault(page = 0, size = 10) org.springframework.data.domain.Pageable pageable) {
+            @PageableDefault(page = 0, size = 10) Pageable pageable) {
         Bundle bundle = episodeOfCareService.search(_id, patient, status, type, pageable);
         return fhirResponseHelper.toResponse(bundle);
     }

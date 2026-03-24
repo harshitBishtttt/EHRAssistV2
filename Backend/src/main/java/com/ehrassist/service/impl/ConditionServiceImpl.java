@@ -15,6 +15,8 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Condition;
 import org.hl7.fhir.r4.model.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +47,7 @@ public class ConditionServiceImpl implements ConditionService {
 
     @Override
     @Transactional(readOnly = true)
-    public Bundle search(UUID id, UUID patientId, String code, org.springframework.data.domain.Pageable pageable) {
+    public Bundle search(UUID id, UUID patientId, String code, Pageable pageable) {
         if (id == null && patientId == null && code == null) {
             return bundleBuilder.searchSetWithPagination("Condition", List.of(), 0L, 0, pageable.getPageSize(), "");
         }
@@ -65,7 +67,7 @@ public class ConditionServiceImpl implements ConditionService {
             });
         }
 
-        org.springframework.data.domain.Page<ConditionEntity> pageResult = conditionRepository.findAll(spec, pageable);
+        Page<ConditionEntity> pageResult = conditionRepository.findAll(spec, pageable);
         
         List<Resource> fhirResources = pageResult.getContent().stream()
                 .map(conditionMapper::toFhirResource)

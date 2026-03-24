@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +40,7 @@ public class PractitionerServiceImpl implements PractitionerService {
 
     @Override
     @Transactional(readOnly = true)
-    public Bundle search(UUID id, String name, String specialty, org.springframework.data.domain.Pageable pageable) {
+    public Bundle search(UUID id, String name, String specialty, Pageable pageable) {
         if (id == null && name == null && specialty == null) {
             return bundleBuilder.searchSetWithPagination("Practitioner", List.of(), 0L, 0, pageable.getPageSize(), "");
         }
@@ -58,7 +60,7 @@ public class PractitionerServiceImpl implements PractitionerService {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("specialtyCode"), specialty));
         }
 
-        org.springframework.data.domain.Page<PractitionerEntity> pageResult = practitionerRepository.findAll(spec, pageable);
+        Page<PractitionerEntity> pageResult = practitionerRepository.findAll(spec, pageable);
 
         List<Resource> fhirResources = pageResult.getContent().stream()
                 .map(practitionerMapper::toFhirResource)

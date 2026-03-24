@@ -15,6 +15,8 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.MedicationRequest;
 import org.hl7.fhir.r4.model.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +47,7 @@ public class MedicationRequestServiceImpl implements MedicationRequestService {
 
     @Override
     @Transactional(readOnly = true)
-    public Bundle search(UUID id, UUID patientId, String status, org.springframework.data.domain.Pageable pageable) {
+    public Bundle search(UUID id, UUID patientId, String status, Pageable pageable) {
         if (id == null && patientId == null && status == null) {
             return bundleBuilder.searchSetWithPagination("MedicationRequest", List.of(), 0L, 0, pageable.getPageSize(), "");
         }
@@ -62,7 +64,7 @@ public class MedicationRequestServiceImpl implements MedicationRequestService {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
         }
 
-        org.springframework.data.domain.Page<MedicationRequestEntity> pageResult = medicationRequestRepository.findAll(spec, pageable);
+        Page<MedicationRequestEntity> pageResult = medicationRequestRepository.findAll(spec, pageable);
 
         List<Resource> fhirResources = pageResult.getContent().stream()
                 .map(medicationRequestMapper::toFhirResource)

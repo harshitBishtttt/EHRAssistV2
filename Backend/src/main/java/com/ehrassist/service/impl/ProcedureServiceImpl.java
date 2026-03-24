@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Procedure;
 import org.hl7.fhir.r4.model.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,7 +46,7 @@ public class ProcedureServiceImpl implements ProcedureService {
 
     @Override
     @Transactional(readOnly = true)
-    public Bundle search(UUID id, UUID patientId, org.springframework.data.domain.Pageable pageable) {
+    public Bundle search(UUID id, UUID patientId, Pageable pageable) {
         // If no parameters provided, return empty bundle
         if (id == null && patientId == null) {
             return bundleBuilder.searchSetWithPagination("Procedure", List.of(), 0L, 0, pageable.getPageSize(), "");
@@ -60,7 +62,7 @@ public class ProcedureServiceImpl implements ProcedureService {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("patient").get("id"), patientId));
         }
 
-        org.springframework.data.domain.Page<ProcedureEntity> pageResult = procedureRepository.findAll(spec, pageable);
+        Page<ProcedureEntity> pageResult = procedureRepository.findAll(spec, pageable);
 
         List<Resource> fhirResources = pageResult.getContent().stream()
                 .map(procedureMapper::toFhirResource)

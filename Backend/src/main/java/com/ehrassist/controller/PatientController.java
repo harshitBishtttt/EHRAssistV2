@@ -6,6 +6,8 @@ import com.ehrassist.util.FhirResponseHelper;
 import lombok.RequiredArgsConstructor;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Patient;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,7 +36,7 @@ public class PatientController {
             @RequestParam(required = false) String gender,
             @RequestParam(required = false) String birthdate,
             @RequestParam(required = false) String email,
-            @org.springframework.data.web.PageableDefault(page = 0, size = 10) org.springframework.data.domain.Pageable pageable) {
+            @PageableDefault(page = 0, size = 10) Pageable pageable) {
         Bundle bundle = patientService.search(_id, family, given, gender, birthdate, email, pageable);
         return fhirResponseHelper.toResponse(bundle);
     }

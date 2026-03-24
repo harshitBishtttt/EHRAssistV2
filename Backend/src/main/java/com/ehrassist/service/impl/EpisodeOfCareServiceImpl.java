@@ -13,6 +13,7 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.EpisodeOfCare;
 import org.hl7.fhir.r4.model.Resource;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +46,7 @@ public class EpisodeOfCareServiceImpl implements EpisodeOfCareService {
 
     @Override
     @Transactional(readOnly = true)
-    public Bundle search(UUID id, UUID patientId, String status, String type, org.springframework.data.domain.Pageable pageable) {
+    public Bundle search(UUID id, UUID patientId, String status, String type, Pageable pageable) {
         if (id == null && patientId == null && status == null && type == null) {
             return bundleBuilder.searchSetWithPagination("EpisodeOfCare", List.of(), 0L, 0, pageable.getPageSize(), "");
         }

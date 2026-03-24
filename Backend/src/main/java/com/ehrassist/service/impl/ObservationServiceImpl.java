@@ -15,6 +15,8 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +47,7 @@ public class ObservationServiceImpl implements ObservationService {
 
     @Override
     @Transactional(readOnly = true)
-    public Bundle search(UUID id, UUID patientId, String code, String category, org.springframework.data.domain.Pageable pageable) {
+    public Bundle search(UUID id, UUID patientId, String code, String category, Pageable pageable) {
         if (id == null && patientId == null && code == null && category == null) {
             return bundleBuilder.searchSetWithPagination("Observation", List.of(), 0L, 0, pageable.getPageSize(), "");
         }
@@ -71,7 +73,7 @@ public class ObservationServiceImpl implements ObservationService {
             });
         }
 
-        org.springframework.data.domain.Page<ObservationEntity> pageResult = observationRepository.findAll(spec, pageable);
+        Page<ObservationEntity> pageResult = observationRepository.findAll(spec, pageable);
         
         List<Resource> fhirResources = pageResult.getContent().stream()
                 .map(observationMapper::toFhirResource)

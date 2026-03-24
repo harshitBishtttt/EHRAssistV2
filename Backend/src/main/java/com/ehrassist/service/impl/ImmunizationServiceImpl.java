@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,7 +44,7 @@ public class ImmunizationServiceImpl implements ImmunizationService {
 
     @Override
     @Transactional(readOnly = true)
-    public Bundle search(UUID id, UUID patientId, org.springframework.data.domain.Pageable pageable) {
+    public Bundle search(UUID id, UUID patientId, Pageable pageable) {
         if (id == null && patientId == null) {
             return bundleBuilder.searchSetWithPagination("Immunization", List.of(), 0L, 0, pageable.getPageSize(), "");
         }
@@ -56,7 +58,7 @@ public class ImmunizationServiceImpl implements ImmunizationService {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("patient").get("id"), patientId));
         }
 
-        org.springframework.data.domain.Page<ImmunizationEntity> pageResult = immunizationRepository.findAll(spec, pageable);
+        Page<ImmunizationEntity> pageResult = immunizationRepository.findAll(spec, pageable);
 
         List<Resource> fhirResources = pageResult.getContent().stream()
                 .map(immunizationMapper::toFhirResource)

@@ -16,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,7 +46,7 @@ public class PatientServiceImpl implements PatientService {
 
     @Override
     @Transactional(readOnly = true)
-    public Bundle search(UUID id, String family, String given, String gender, String birthdate, String email, org.springframework.data.domain.Pageable pageable) {
+    public Bundle search(UUID id, String family, String given, String gender, String birthdate, String email, Pageable pageable) {
         // If no parameters provided, return empty bundle
         if (id == null && family == null && given == null && gender == null && birthdate == null && email == null) {
             return bundleBuilder.searchSetWithPagination("Patient", List.of(), 0L, 0, pageable.getPageSize(), "");
@@ -85,7 +87,7 @@ public class PatientServiceImpl implements PatientService {
             });
         }
 
-        org.springframework.data.domain.Page<PatientEntity> pageResult = patientRepository.findAll(spec, pageable);
+        Page<PatientEntity> pageResult = patientRepository.findAll(spec, pageable);
 
         List<Resource> fhirResources = pageResult.getContent().stream()
                 .map(patientMapper::toFhirResource)
