@@ -3,7 +3,10 @@ package com.ehrassist.mapper;
 import com.ehrassist.entity.ConditionEntity;
 import com.ehrassist.entity.EpisodeOfCareDiagnosisEntity;
 import com.ehrassist.entity.EpisodeOfCareEntity;
+import com.ehrassist.entity.EpisodeOfCareStatusHistoryEntity;
 import com.ehrassist.entity.OrganizationEntity;
+import com.ehrassist.entity.PatientEntity;
+import com.ehrassist.entity.PatientNameEntity;
 import com.ehrassist.entity.PractitionerEntity;
 import com.ehrassist.entity.master.ConditionCodeMasterEntity;
 import org.hl7.fhir.r4.model.*;
@@ -17,7 +20,9 @@ import java.util.List;
 @Component
 public class EpisodeOfCareMapper {
 
-    public EpisodeOfCare toFhirResource(EpisodeOfCareEntity entity, List<EpisodeOfCareDiagnosisEntity> diagnoses) {
+    public EpisodeOfCare toFhirResource(EpisodeOfCareEntity entity,
+                                        List<EpisodeOfCareDiagnosisEntity> diagnoses,
+                                        List<EpisodeOfCareStatusHistoryEntity> statusHistoryEntities) {
         EpisodeOfCare eoc = new EpisodeOfCare();
         eoc.setId(entity.getId().toString());
 
@@ -38,7 +43,10 @@ public class EpisodeOfCareMapper {
         }
 
         if (entity.getPatient() != null) {
-            eoc.setPatient(new Reference("Patient/" + entity.getPatient().getId()));
+            PatientEntity pat = entity.getPatient();
+            Reference patRef = new Reference("Patient/" + pat.getId());
+            patRef.setDisplay(formatPatientDisplay(pat));
+            eoc.setPatient(patRef);
         }
 
         if (entity.getManagingOrganization() != null) {
@@ -95,7 +103,38 @@ public class EpisodeOfCareMapper {
             }
         }
 
+        if (statusHistoryEntities != null) {
+            for (EpisodeOfCareStatusHistoryEntity sh : statusHistoryEntities) {
+                eoc.addStatusHistory(toStatusHistoryComponent(sh));
+            }
+        }
+
         return eoc;
+    }
+
+    private EpisodeOfCare.EpisodeOfCareStatusHistoryComponent toStatusHistoryComponent(
+            EpisodeOfCareStatusHistoryEntity sh) {
+        EpisodeOfCare.EpisodeOfCareStatusHistoryComponent comp =
+                new EpisodeOfCare.EpisodeOfCareStatusHistoryComponent();
+
+        if (sh.getStatus() != null) {
+            EpisodeOfCare.EpisodeOfCareStatus status =
+                    EpisodeOfCare.EpisodeOfCareStatus.fromCode(sh.getStatus());
+            if (status != null) {
+                comp.setStatus(status);
+            }
+        }
+
+        Period period = new Period();
+        if (sh.getPeriodStart() != null) {
+            period.setStart(toDate(sh.getPeriodStart()));
+        }
+        if (sh.getPeriodEnd() != null) {
+            period.setEnd(toDate(sh.getPeriodEnd()));
+        }
+        comp.setPeriod(period);
+
+        return comp;
     }
 
     private EpisodeOfCare.DiagnosisComponent toDiagnosisComponent(EpisodeOfCareDiagnosisEntity diag) {
@@ -136,6 +175,22 @@ public class EpisodeOfCareMapper {
                 || entity.getTypeDisplay() != null
                 || entity.getTypeSystem() != null
                 || entity.getTypeText() != null;
+    }
+
+    private String formatPatientDisplay(PatientEntity pat) {
+        if (pat.getNames() == null || pat.getNames().isEmpty()) {
+            return null;
+        }
+        PatientNameEntity name = pat.getNames().get(0);
+        StringBuilder sb = new StringBuilder();
+        if (name.getGivenFirst() != null) {
+            sb.append(name.getGivenFirst());
+        }
+        if (name.getFamily() != null) {
+            if (sb.length() > 0) sb.append(' ');
+            sb.append(name.getFamily());
+        }
+        return sb.length() > 0 ? sb.toString() : null;
     }
 
     private String formatPractitionerDisplay(PractitionerEntity p) {

@@ -2,10 +2,12 @@ package com.ehrassist.service.impl;
 
 import com.ehrassist.entity.EpisodeOfCareDiagnosisEntity;
 import com.ehrassist.entity.EpisodeOfCareEntity;
+import com.ehrassist.entity.EpisodeOfCareStatusHistoryEntity;
 import com.ehrassist.exception.ResourceNotFoundException;
 import com.ehrassist.mapper.EpisodeOfCareMapper;
 import com.ehrassist.repository.EpisodeOfCareDiagnosisRepository;
 import com.ehrassist.repository.EpisodeOfCareRepository;
+import com.ehrassist.repository.EpisodeOfCareStatusHistoryRepository;
 import com.ehrassist.service.EpisodeOfCareService;
 import com.ehrassist.util.BundleBuilder;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,7 @@ public class EpisodeOfCareServiceImpl implements EpisodeOfCareService {
 
     private final EpisodeOfCareRepository episodeOfCareRepository;
     private final EpisodeOfCareDiagnosisRepository episodeOfCareDiagnosisRepository;
+    private final EpisodeOfCareStatusHistoryRepository statusHistoryRepository;
     private final EpisodeOfCareMapper episodeOfCareMapper;
     private final BundleBuilder bundleBuilder;
 
@@ -41,7 +44,9 @@ public class EpisodeOfCareServiceImpl implements EpisodeOfCareService {
                 .orElseThrow(() -> new ResourceNotFoundException("EpisodeOfCare not found: " + id));
         List<EpisodeOfCareDiagnosisEntity> diagnoses =
                 episodeOfCareDiagnosisRepository.findByEpisodeIdWithCondition(id);
-        return episodeOfCareMapper.toFhirResource(entity, diagnoses);
+        List<EpisodeOfCareStatusHistoryEntity> statusHistory =
+                statusHistoryRepository.findByEpisodeIdOrderByPeriodStartAsc(id);
+        return episodeOfCareMapper.toFhirResource(entity, diagnoses, statusHistory);
     }
 
     @Override
@@ -75,12 +80,19 @@ public class EpisodeOfCareServiceImpl implements EpisodeOfCareService {
                 : episodeOfCareRepository.findAllWithAssociationsByIds(ids).stream()
                 .collect(Collectors.toMap(EpisodeOfCareEntity::getId, Function.identity(), (a, b) -> a));
 
+        Map<UUID, List<EpisodeOfCareStatusHistoryEntity>> statusHistoryByEpisode = ids.isEmpty()
+                ? Map.of()
+                : statusHistoryRepository.findByEpisodeIdInOrderByPeriodStartAsc(ids).stream()
+                .collect(Collectors.groupingBy(sh -> sh.getEpisode().getId()));
+
         List<Resource> fhirResources = pageResult.getContent().stream()
                 .map(e -> byId.getOrDefault(e.getId(), e))
                 .map(entity -> {
                     List<EpisodeOfCareDiagnosisEntity> diagnoses =
                             episodeOfCareDiagnosisRepository.findByEpisodeIdWithCondition(entity.getId());
-                    return episodeOfCareMapper.toFhirResource(entity, diagnoses);
+                    List<EpisodeOfCareStatusHistoryEntity> statusHistory =
+                            statusHistoryByEpisode.getOrDefault(entity.getId(), List.of());
+                    return episodeOfCareMapper.toFhirResource(entity, diagnoses, statusHistory);
                 })
                 .map(Resource.class::cast)
                 .toList();
