@@ -34,8 +34,9 @@ public class ObservationController {
             @RequestParam(required = false) UUID patient,
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String category,
+            @RequestParam(name = "value-quantity", required = false) String valueQuantity,
             @PageableDefault(page = 0, size = 10) Pageable pageable) {
-        Bundle bundle = observationService.search(_id, patient, code, category, pageable);
+        Bundle bundle = observationService.search(_id, patient, code, category, valueQuantity, pageable);
         return fhirResponseHelper.toResponse(bundle);
     }
 

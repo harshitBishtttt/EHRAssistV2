@@ -10,6 +10,10 @@ import com.ehrassist.repository.PractitionerRepository;
 import com.ehrassist.repository.master.ObservationCodeMasterRepository;
 import com.ehrassist.service.ObservationService;
 import com.ehrassist.util.BundleBuilder;
+import com.ehrassist.util.FhirQuantitySearchParser;
+import com.ehrassist.util.FhirQuantitySearchParser.ParsedValueQuantity;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Coding;
@@ -21,7 +25,12 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -47,8 +56,14 @@ public class ObservationServiceImpl implements ObservationService {
 
     @Override
     @Transactional(readOnly = true)
-    public Bundle search(UUID id, UUID patientId, String code, String category, Pageable pageable) {
-        if (id == null && patientId == null && code == null && category == null) {
+    public Bundle search(UUID id, UUID patientId, String code, String category, String valueQuantity, Pageable pageable) {
+        ParsedValueQuantity parsedQuantity = FhirQuantitySearchParser.parse(valueQuantity);
+        if (valueQuantity != null && !valueQuantity.isBlank() && parsedQuantity == null) {
+            return bundleBuilder.searchSetWithPagination("Observation", List.of(), 0L, 0, pageable.getPageSize(), "");
+        }
+
+        if (id == null && patientId == null && code == null && category == null
+                && (valueQuantity == null || valueQuantity.isBlank())) {
             return bundleBuilder.searchSetWithPagination("Observation", List.of(), 0L, 0, pageable.getPageSize(), "");
         }
 
@@ -72,6 +87,9 @@ public class ObservationServiceImpl implements ObservationService {
                 return cb.equal(codeJoin.get("fhirCategoryCode"), category);
             });
         }
+        if (parsedQuantity != null) {
+            spec = spec.and((root, query, cb) -> buildQuantityPredicates(root, cb, parsedQuantity));
+        }
 
         Page<ObservationEntity> pageResult = observationRepository.findAll(spec, pageable);
         
@@ -85,10 +103,51 @@ public class ObservationServiceImpl implements ObservationService {
         if (patientId != null) queryParams.append("patient=").append(patientId).append("&");
         if (code != null) queryParams.append("code=").append(code).append("&");
         if (category != null) queryParams.append("category=").append(category).append("&");
+        if (valueQuantity != null && !valueQuantity.isBlank()) {
+            queryParams.append("value-quantity=")
+                    .append(URLEncoder.encode(valueQuantity, StandardCharsets.UTF_8))
+                    .append("&");
+        }
         String query = queryParams.length() > 0 ? queryParams.substring(0, queryParams.length() - 1) : "";
 
         return bundleBuilder.searchSetWithPagination("Observation", fhirResources, pageResult.getTotalElements(), 
                 pageable.getPageNumber(), pageable.getPageSize(), query);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Predicate buildQuantityPredicates(
+            jakarta.persistence.criteria.Root<ObservationEntity> root,
+            jakarta.persistence.criteria.CriteriaBuilder cb,
+            ParsedValueQuantity vq) {
+        Expression<BigDecimal> qtyPath = (Expression<BigDecimal>) root.get("valueQuantity");
+        List<Predicate> parts = new ArrayList<>();
+        parts.add(cb.isNotNull(qtyPath));
+        parts.add(quantityCompare(cb, qtyPath, vq));
+        if (vq.hasUnit()) {
+            Expression<String> unitPath = (Expression<String>) root.get("valueUnit");
+            parts.add(cb.equal(
+                    cb.lower(unitPath),
+                    vq.unit().trim().toLowerCase(Locale.ROOT)));
+        }
+        return cb.and(parts.toArray(Predicate[]::new));
+    }
+
+    private Predicate quantityCompare(
+            jakarta.persistence.criteria.CriteriaBuilder cb,
+            Expression<BigDecimal> qtyPath,
+            ParsedValueQuantity vq) {
+        BigDecimal n = vq.number();
+        return switch (vq.prefix()) {
+            case "eq" -> cb.equal(qtyPath, n);
+            case "ne" -> cb.notEqual(qtyPath, n);
+            case "gt" -> cb.greaterThan(qtyPath, n);
+            case "lt" -> cb.lessThan(qtyPath, n);
+            case "ge" -> cb.greaterThanOrEqualTo(qtyPath, n);
+            case "le" -> cb.lessThanOrEqualTo(qtyPath, n);
+            case "sa" -> cb.greaterThanOrEqualTo(qtyPath, n);
+            case "eb" -> cb.lessThanOrEqualTo(qtyPath, n);
+            default -> cb.equal(qtyPath, n);
+        };
     }
 
     @Override
