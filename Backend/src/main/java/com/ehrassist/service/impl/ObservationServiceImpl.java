@@ -12,7 +12,6 @@ import com.ehrassist.service.ObservationService;
 import com.ehrassist.util.BundleBuilder;
 import com.ehrassist.util.FhirQuantitySearchParser;
 import com.ehrassist.util.FhirQuantitySearchParser.ParsedValueQuantity;
-import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.hl7.fhir.r4.model.Bundle;
@@ -114,27 +113,24 @@ public class ObservationServiceImpl implements ObservationService {
                 pageable.getPageNumber(), pageable.getPageSize(), query);
     }
 
-    @SuppressWarnings("unchecked")
     private Predicate buildQuantityPredicates(
             jakarta.persistence.criteria.Root<ObservationEntity> root,
             jakarta.persistence.criteria.CriteriaBuilder cb,
             ParsedValueQuantity vq) {
-        Expression<BigDecimal> qtyPath = (Expression<BigDecimal>) root.get("valueQuantity");
+        jakarta.persistence.criteria.Path<BigDecimal> qtyPath = root.<BigDecimal>get("valueQuantity");
         List<Predicate> parts = new ArrayList<>();
         parts.add(cb.isNotNull(qtyPath));
         parts.add(quantityCompare(cb, qtyPath, vq));
         if (vq.hasUnit()) {
-            Expression<String> unitPath = (Expression<String>) root.get("valueUnit");
-            parts.add(cb.equal(
-                    cb.lower(unitPath),
-                    vq.unit().trim().toLowerCase(Locale.ROOT)));
+            jakarta.persistence.criteria.Path<String> unitPath = root.<String>get("valueUnit");
+            parts.add(cb.equal(cb.lower(unitPath), vq.unit().trim().toLowerCase(Locale.ROOT)));
         }
         return cb.and(parts.toArray(Predicate[]::new));
     }
 
     private Predicate quantityCompare(
             jakarta.persistence.criteria.CriteriaBuilder cb,
-            Expression<BigDecimal> qtyPath,
+            jakarta.persistence.criteria.Path<BigDecimal> qtyPath,
             ParsedValueQuantity vq) {
         BigDecimal n = vq.number();
         return switch (vq.prefix()) {
