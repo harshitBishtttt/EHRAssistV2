@@ -32,8 +32,9 @@ public class ProcedureController {
     public ResponseEntity<String> search(
             @RequestParam(required = false) UUID _id,
             @RequestParam(required = false) UUID patient,
+            @RequestParam(required = false) Integer code,
             @PageableDefault(page = 0, size = 10) Pageable pageable) {
-        Bundle bundle = procedureService.search(_id, patient, pageable);
+        Bundle bundle = procedureService.search(_id, patient, code, pageable);
         return fhirResponseHelper.toResponse(bundle);
     }
 

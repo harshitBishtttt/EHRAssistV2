@@ -46,13 +46,11 @@ public class ProcedureServiceImpl implements ProcedureService {
 
     @Override
     @Transactional(readOnly = true)
-    public Bundle search(UUID id, UUID patientId, Pageable pageable) {
-        // If no parameters provided, return empty bundle
-        if (id == null && patientId == null) {
+    public Bundle search(UUID id, UUID patientId, Integer code, Pageable pageable) {
+        if (id == null && patientId == null && code == null) {
             return bundleBuilder.searchSetWithPagination("Procedure", List.of(), 0L, 0, pageable.getPageSize(), "");
         }
 
-        // Build specification with all provided parameters (AND logic)
         Specification<ProcedureEntity> spec = Specification.where(null);
         
         if (id != null) {
@@ -60,6 +58,9 @@ public class ProcedureServiceImpl implements ProcedureService {
         }
         if (patientId != null) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("patient").get("id"), patientId));
+        }
+        if (code != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("cptCode"), code));
         }
 
         Page<ProcedureEntity> pageResult = procedureRepository.findAll(spec, pageable);
@@ -72,6 +73,7 @@ public class ProcedureServiceImpl implements ProcedureService {
         StringBuilder queryParams = new StringBuilder();
         if (id != null) queryParams.append("_id=").append(id).append("&");
         if (patientId != null) queryParams.append("patient=").append(patientId).append("&");
+        if (code != null) queryParams.append("code=").append(code).append("&");
         String query = queryParams.length() > 0 ? queryParams.substring(0, queryParams.length() - 1) : "";
 
         return bundleBuilder.searchSetWithPagination("Procedure", fhirResources, pageResult.getTotalElements(), 
